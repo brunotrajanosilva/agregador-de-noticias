@@ -1,0 +1,45 @@
+{% load static %}
+{% load new_template_tags %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregador de notícias</title>
+    <title>Document</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'style.css' %}">
+
+</head>
+<body> 
+    <h1 class="home-title">Olá, aqui você encontrará as últimas notícias dos portais {% for website_name, val in results.logo_list.items %}
+        {{website_name}}{% if forloop.revcounter == 2 %} e {% elif forloop.last %}{% else %}, {% endif %}
+    {% endfor %}</h1>
+    
+    <div class="grid-card">
+        {% for item in results.article_list %}
+        
+        <div class="card ">
+            <a class="card-image" href="{{item.link}}" target="_blank">
+                <img src="{{item.image}}">
+                <time class="card-time" datetime="{{item.date.posted_date}}">{{item.date.time_since_posted}}</time>
+            </a>
+            <div class="card-content">
+                
+                <div class="card-details">
+                    <h2 class="card-title">{{item.title}}</h2>
+                    <p>{{item.paragraph}}</p>
+                </div>
+            </div>
+            
+            <div class="card-action website-logo">
+                {{results.logo_list | get_logo:item.website_name | safe}}
+            </div>
+            <a class="card-action article-link" href="{{item.link}}" target="_blank">Ler Mais</a>
+        </div>
+        {% endfor %}
+    </div>
+
+
+</body>
+</html>
