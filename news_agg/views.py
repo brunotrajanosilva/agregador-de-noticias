@@ -1,24 +1,25 @@
 from django.shortcuts import render
-from django.http import HttpResponse
-from .modules.ign_soup import ign_soup
-from .modules.theenemy_soup import theenemy_soup
-from .modules.create_and_sort_website_data import create_and_sort_website_data
+from django.http import JsonResponse
+from .modules.websites.screen_rant import ScreenRant
+from .modules.websites.collider import Collider
+from .modules.websites.ign import Ign
 
-
-
+from .modules.websites_manager import WebsiteManager
 
 
 def index(request):
 
-    create_data = create_and_sort_website_data()
-    ign = ign_soup()
-    theenemy = theenemy_soup()
+    manager = WebsiteManager()
+    manager.add_website(ScreenRant())
+    manager.add_website(Collider())
+    manager.add_website(Ign())
 
-    create_data.add_website(ign)
-    create_data.add_website(theenemy)
+    manager.fetch()
 
-    news_result = create_data.sort_data()
+    context = manager.get_data()
 
+    
+    return JsonResponse({'websites': context}, safe=True)
 
-
-    return render(request, 'index.html', {'results':news_result })
+def front_end(request):
+    return render(request, 'front-end.html')

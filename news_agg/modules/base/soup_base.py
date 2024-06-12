@@ -1,115 +1,99 @@
 from bs4 import BeautifulSoup as BSoup
-from datetime import datetime
+from datetime import datetime, timezone
 import requests
-
-
-
-
 
 
 # base
 class soup_base:
     def __init__(self):
-        self.website_components_list = self.get_website_data()
+        self.articles = []
+        self.logo = None
 
-    def get_website_data(self):
-
-        try:
-            website_request = requests.get(self.get_base_url())
-                
-        except requests.exceptions.RequestException as error:
-            raise error
-
-        
-        
-        soup = self.make_soup(website_request.text)
-
-
+    def fetch_all_articles(self):
+        req = self.request_website()
+        soup = self.make_soup(req.text)
         articles_finded = self.find_articles(soup)
-        articles_list = self.get_articles_list(articles_finded)
+        logo = self.find_logo(soup)
+        self.logo = logo
 
-        website_logo = self.find_website_logo(soup)
+        for article in articles_finded:
+            mounted_article = self.mount_article(article)
+            self.articles.append(mounted_article)
 
-        website_components_list = {'logo': website_logo, 'articles': articles_list}
-        return website_components_list
 
-
+    def request_website(self):
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36", 
+            
+        }
+        
+        website_request = requests.get(self.url, headers=headers)
+        return website_request
+                
+    
     def make_soup(self, website):
         soup = BSoup(website, 'html.parser')
         return soup
 
-    def define_dates(self, date, input_date_format):
-        now_date = datetime.now(tz=None)
+    
 
-        posted_date = datetime.strptime(date, input_date_format).replace(tzinfo=None)
+    def mount_article(self, article):
 
-        time_since_posted_subtraction = now_date - posted_date
-        seconds = time_since_posted_subtraction.total_seconds()
+        try:
+            title = self.find_title(article)
+        except:
+            title = ''
 
-        days, seconds = divmod(seconds, 86400)
-        hours, seconds = divmod(seconds, 3600)
-        minutes, seconds = divmod(seconds, 60)
+        try:
+            paragraph = self.find_paragraph(article)
+        except:
+            paragraph = ''
+        
+        try:
+            image = self.find_image(article)
+        except:
+            image = ''
 
-        time_since_posted = 'há '
+        try:
+            link = self.find_link(article)
+        except:
+            link = ''
+
+        try:
+            get_date = self.find_date(article)
+            date = self.define_date(get_date)
+        except:
+            date = datetime.now()
 
 
-        if days > 0:
-            time_since_posted += f'{int(days)} dias, '
-
-        if hours > 0:
-            time_since_posted += f'{int(hours)} horas, '
-
-        if minutes > 0:
-            time_since_posted += f'{int(minutes)} minutos'
-
-
-        output_date_format = '%Y-%m-%dT%H:%M:%S'
-        output_posted_date = posted_date.strftime(output_date_format)
-
-        result = {
-            'posted_date': output_posted_date,
-            'time_since_posted': time_since_posted
+        mounted_article = {
+            'title': title,
+            'paragraph': paragraph,
+            'image': image,
+            'link': link,
+            'date': date,
         }
 
-        return result
+        return mounted_article
 
 
+    def define_date(self, date):
+        new_format = '%Y-%m-%dT%H:%M:%SZ'
 
-    def get_articles_list(self, articles):
-
-        title_list = [self.find_title(article) for article in articles]
-
-        paragraph_list = [self.find_paragraph(article)
-            for article in articles]
-
-        image_list = [self.find_image(article) for article in articles]
-
-        link_list = [self.find_link(article)
-            for article in articles]
+        new_date = date.strftime(new_format)
+        return new_date
 
 
-        date_list = [self.find_date(article)
-            for article in articles]
+    def get_info(self):
+        info = {
+            'name': self.name,
+            'url': self.url,
+            'logo': self.logo,
+            'articles': self.articles,
+        }
 
+        return info
 
-
-        result_articles_list = [
-            {'title': title, 'paragraph': paragraph, 'image': image, 'link': link, 'date': date, 'website_name': self.website_name}
-            for title, paragraph, image, link, date
-            in zip(title_list, paragraph_list, image_list,
-            link_list, date_list)]
-
-        return result_articles_list
-
-
-    def website_name(self):
-        raise NotImplementedError("Must override website_name")
-
-    def find_website_logo(self, soup):
-        raise NotImplementedError("Must override find_website_logo")
-
-    def get_base_url(self):
-        raise NotImplementedError("Must override get_base_url")
 
     def find_articles(self, soup):
         raise NotImplementedError("Must override find_articles")
@@ -127,4 +111,7 @@ class soup_base:
         raise NotImplementedError("Must override find_link")
 
     def find_date(self, article):
+        raise NotImplementedError("Must override find_date")
+
+    def find_logo(self, soup):
         raise NotImplementedError("Must override find_date")
